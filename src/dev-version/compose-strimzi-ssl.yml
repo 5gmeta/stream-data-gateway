@@ -1,0 +1,560 @@
+# 5GMETA - Vicomtech - Development version 
+# Docker compose for the dev and testing.
+# @author damendola@vicomtech.org
+# 
+
+---
+version: '3'
+services:
+  postgres:
+    image: postgres
+    hostname: postgres
+    container_name: postgres
+    volumes:
+      - /var/postgresql/data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=keycloak
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+    ports:
+      - "127.0.0.1:5432:5432"
+  keycloak:
+    hostname: keycloak
+    container_name: keycloak
+    image: keycloak/keycloak:21.1.0
+    command:
+      - "-v start --https-certificate-file=/etc/ssl/certs/docker/keycloak1.crt --https-certificate-key-file=/etc/ssl/certs/docker/keycloak1.key --https-key-store-file=/etc/ssl/certs/docker/keycloak1.jks --https-key-store-password=dockerpw --https-protocols=TLSv1.3,TLSv1.2 --https-trust-store-file=/etc/ssl/certs/docker/truststore.jks --https-trust-store-password=dockerpw --db postgres --db-url jdbc:postgresql://postgres:5432/keycloak --db-username=admin --db-password=admin --hostname-strict=false --import-realm -Dkeycloak.profile.feature.upload_scripts=enabled -Dssl.endpoint.identification.algorithm="
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_HTTP_RELATIVE_PATH=/
+      - KC_DB_USERNAME=admin
+      - KC_DB_PASSWORD=admin
+      - KEYCLOAK_FRONTEND_URL=http://20.199.83.36:8080/
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://127.0.0.1:5432/keycloak
+    volumes:
+      - /home/meta/realm/:/opt/keycloak/data/import
+      - /etc/ssl/certs/docker/:/etc/ssl/certs/docker
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    depends_on:
+      - postgres
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.1
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  broker:
+    image: confluentinc/cp-kafka:7.5.1
+    hostname: broker
+    container_name: broker
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:29092"
+      - "9092:9092"
+      - "9101:9101"
+    volumes:
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT.jar:/usr/share/java/kafka/kafka-oauth-common-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/kafka/kafka-oauth-common-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/accessors-smart-2.4.9.jar:/usr/share/java/kafka/accessors-smart-2.4.9.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT.jar:/usr/share/java/kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/kafka/kafka-oauth-client-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT.jar:/usr/share/java/kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/json-path-2.8.0.jar:/usr/share/java/kafka/json-path-2.8.0.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT.jar:/usr/share/java/kafka/kafka-oauth-server-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT.jar:/usr/share/java/kafka/kafka-oauth-client-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/nimbus-jose-jwt-9.31.jar:/usr/share/java/kafka/nimbus-jose-jwt-9.31.jar
+      - /home/meta/jar-for-kafka/json-smart-2.4.10.jar:/usr/share/java/kafka/json-smart-2.4.10.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/kafka/kafka-oauth-server-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/kafka/kafka-oauth-server-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/kafka/kafka-oauth-common-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/kafka/kafka-oauth-client-1.0.0-SNAPSHOT-javadoc.jar
+      - /etc/ssl/certs/docker/:/etc/ssl/certs/docker/
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: REPLICATION:SASL_SSL,CLIENT:SASL_SSL
+      KAFKA_LISTENERS: CLIENT://0.0.0.0:9092,REPLICATION://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: CLIENT://20.199.83.36:9092,REPLICATION://broker:9093
+      KAFKA_SECURITY_PROTOCOL: SASL_SSL
+      KAFKA_SSL_KEYSTORE_LOCATION: /etc/ssl/certs/docker/broker1.jks
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+      KAFKA_STRIMZI_AUTHORIZATION_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+      KAFKA_SSL_KEYSTORE_PASSWORD: dockerpw
+      KAFKA_SSL_KEY_PASSWORD: dockerpw
+      KAFKA_SSL_TRUSTSTORE_LOCATION: /etc/ssl/certs/docker/truststore.jks
+      KAFKA_SSL_TRUSTSTORE_PASSWORD: dockerpw
+      KAFKA_SSL_KEYSTORE_TYPE: JKS
+      KAFKA_SSL_TRUSTSTORE_TYPE: JKS
+      KAFKA_SSL_CLIENT_AUTH: required
+      KAFKA_INTER_BROKER_LISTENER_NAME: REPLICATION
+      KAFKA_SASL_ENABLED_MECHANISMS: OAUTHBEARER
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: OAUTHBEARER
+      KAFKA_LISTENER_NAME_CLIENT_OAUTHBEARER_SASL_JAAS_CONFIG: >
+              org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
+              oauth.valid.issuer.uri="https://20.199.83.36:8443/realms/demo"
+              oauth.ssl.truststore.location="/etc/ssl/certs/docker/truststore.jks"
+              oauth.ssl.truststore.password="dockerpw"
+              oauth.jwks.endpoint.uri="https://20.199.83.36:8443/realms/demo/protocol/openid-connect/certs"
+              oauth.username.claim="preferred_username"
+              oauth.ssl.endpoint.identification.algorithm=""
+              unsecuredLoginStringClaim_sub="unused";
+      KAFKA_LISTENER_NAME_REPLICATION_OAUTHBEARER_SASL_JAAS_CONFIG: >
+              org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
+              oauth.client.id="kafka"
+              oauth.client.secret="cpCkolaKEJg8VUCVrJ8iUEO2AvAqveOG"
+              oauth.ssl.truststore.location="/etc/ssl/certs/docker/truststore.jks"
+              oauth.ssl.truststore.password="dockerpw"
+              oauth.ssl.endpoint.identification.algorithm=""
+              oauth.token.endpoint.uri="https://20.199.83.36:8443/realms/demo/protocol/openid-connect/token"
+              oauth.valid.issuer.uri="https://20.199.83.36:8443/realms/demo"
+              oauth.jwks.endpoint.uri="https://20.199.83.36:8443/realms/demo/protocol/openid-connect/certs"
+              oauth.username.claim="preferred_username";
+      KAFKA_LISTENER_NAME_CLIENT_OAUTHBEARER_SASL_SERVER_CALLBACK_HANDLER_CLASS: io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler
+      KAFKA_LISTENER_NAME_REPLICATION_OAUTHBEARER_SASL_SERVER_CALLBACK_HANDLER_CLASS: io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler
+      KAFKA_LISTENER_NAME_REPLICATION_OAUTHBEARER_SASL_LOGIN_CALLBACK_HANDLER_CLASS: io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
+      KAFKA_PRINCIPAL_BUILDER_CLASS: io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder
+      KAFKA_AUTHORIZER_CLASS_NAME: io.strimzi.kafka.oauth.server.authorizer.KeycloakAuthorizer
+      KAFKA_STRIMZI_AUTHORIZATION_TOKEN_ENDPOINT_URI: https://20.199.83.36:8443/realms/demo/protocol/openid-connect/token
+      KAFKA_STRIMZI_AUTHORIZATION_CLIENT_ID: "kafka"
+      KAFKA_STRIMZI_AUTHORIZATION_SSL_TRUSTSTORE_LOCATION: /etc/ssl/certs/docker/truststore.jks
+      KAFKA_STRIMZI_AUTHORIZATION_SSL_TRUSTSTORE_PASSWORD: dockerpw
+      KAFKA_STRIMZI_AUTHORIZATION_GRANTS_REFRESH_PERIOD_SECONDS: 120
+      KAFKA_STRIMZI_AUTHORIZATION_GRANTS_REFRESH_POOL_SIZE: 10
+      KAFKA_STRIMZI_AUTHORIZATION_HTTP_RETRIES: 3
+      KAFKA_STRIMZI_AUTHORIZATION_CONNECT_TIMEOUT_SECONDS: 10
+      KAFKA_STRIMZI_AUTHORIZATION_GRANTS_REFRESH_PERIOD_SECONDS: 5
+      KAFKA_STRIMZI_AUTHORIZATION_REUSE_GRANTS: "true"
+      KAFKA_STRIMZI_AUTHORIZATION_GRANTS_MAX_IDLE_TIME_SECONDS: 600
+      KAFKA_STRIMZI_AUTHORIZATION_DELEGATE_TO_KAFKA_ACL: "false"
+      KAFKA_SUPER_USERS: "User:service-account-kafka"
+      KAFKA_OAUTH_USERNAME_CLAIM: "preferred_username"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: broker
+      key.converter: org.apache.kafka.connect.storage.StringConverter
+      value.converter: io.confluent.connect.avro.AvroConverter
+      value.converter.schema.registry.url: http://schema-registry:8081
+      KAFKA_MESSAGE_MAX_BYTES: 15000000
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.5.1
+    hostname: schema-registry
+    container_name: schema-registry
+    depends_on:
+      - broker
+    ports:
+      - "8081:8081"
+    volumes:
+      - /etc/ssl/certs/docker/:/etc/ssl/certs/docker/
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-common-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-common-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/accessors-smart-2.4.9.jar:/usr/share/java/cp-base-new/accessors-smart-2.4.9.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-server-plain-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-server-plain-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-server-plain-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-client-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/json-path-2.8.0.jar:/usr/share/java/cp-base-new/json-path-2.8.0.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-server-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-client-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/nimbus-jose-jwt-9.31.jar:/usr/share/java/cp-base-new/nimbus-jose-jwt-9.31.jar
+      - /home/meta/jar-for-kafka/json-smart-2.4.10.jar:/usr/share/java/cp-base-new/json-smart-2.4.10.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-server-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-server-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-common-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-client-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT.jar:/usr/share/java/schema-registry/kafka-oauth-common-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/schema-registry/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/schema-registry/kafka-oauth-common-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/accessors-smart-2.4.9.jar:/usr/share/java/schema-registry/accessors-smart-2.4.9.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT.jar:/usr/share/java/schema-registry/kafka-oauth-server-plain-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/schema-registry/kafka-oauth-server-plain-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/schema-registry/kafka-oauth-server-plain-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/schema-registry/kafka-oauth-client-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT.jar:/usr/share/java/schema-registry/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/json-path-2.8.0.jar:/usr/share/java/schema-registry/json-path-2.8.0.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT.jar:/usr/share/java/schema-registry/kafka-oauth-server-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT.jar:/usr/share/java/schema-registry/kafka-oauth-client-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/schema-registry/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/nimbus-jose-jwt-9.31.jar:/usr/share/java/schema-registry/nimbus-jose-jwt-9.31.jar
+      - /home/meta/jar-for-kafka/json-smart-2.4.10.jar:/usr/share/java/schema-registry/json-smart-2.4.10.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/schema-registry/kafka-oauth-server-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/schema-registry/kafka-oauth-server-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/schema-registry/kafka-oauth-common-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/schema-registry/kafka-oauth-client-1.0.0-SNAPSHOT-javadoc.jar
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 20.199.83.36:9092
+      SCHEMA_REGISTRY_LISTENERS: http://schema-registry:8081
+      SCHEMA_REGISTRY_DEBUG: 'true'
+      SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: SASL_SSL
+      SCHEMA_REGISTRY_KAFKASTORE_SASL_MECHANISM: OAUTHBEARER
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_LOCATION: /etc/ssl/certs/docker/broker1.jks
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_PASSWORD: dockerpw
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEY_PASSWORD: dockerpw
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_TRUSTSTORE_LOCATION: /etc/ssl/certs/docker/truststore.jks
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_TRUSTSTORE_PASSWORD: dockerpw
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+      SCHEMA_REGISTRY_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+      SCHEMA_REGISTRY_KAFKASTORE_SASL_LOGIN_CALLBACK_HANDLER_CLASS: io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
+      SCHEMA_REGISTRY_KAFKASTORE_SASL_JAAS_CONFIG: >
+              org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
+              oauth.client.id="kafka"
+              oauth.client.secret="cpCkolaKEJg8VUCVrJ8iUEO2AvAqveOG"
+              oauth.ssl.endpoint.identification.algorithm=""
+              oauth.ssl.truststore.location="/etc/ssl/certs/docker/truststore.jks"
+              oauth.ssl.truststore.password="dockerpw"
+              oauth.token.endpoint.uri="https://20.199.83.36:8443/realms/demo/protocol/openid-connect/token";
+
+  connect:
+    image: 5gmeta/kafka-connect:dev-lenses
+    hostname: connect
+    container_name: connect
+    depends_on:
+      - broker
+      - schema-registry
+    ports:
+      - "8083:8083"
+    restart: always
+    volumes:
+      - /etc/ssl/certs/docker/:/etc/ssl/certs/docker/
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT.jar:/usr/share/java/kafka/kafka-oauth-common-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/kafka/kafka-oauth-common-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/accessors-smart-2.4.9.jar:/usr/share/java/kafka/accessors-smart-2.4.9.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT.jar:/usr/share/java/kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/kafka/kafka-oauth-client-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT.jar:/usr/share/java/kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/json-path-2.8.0.jar:/usr/share/java/kafka/json-path-2.8.0.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT.jar:/usr/share/java/kafka/kafka-oauth-server-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT.jar:/usr/share/java/kafka/kafka-oauth-client-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/nimbus-jose-jwt-9.31.jar:/usr/share/java/kafka/nimbus-jose-jwt-9.31.jar
+      - /home/meta/jar-for-kafka/json-smart-2.4.10.jar:/usr/share/java/kafka/json-smart-2.4.10.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/kafka/kafka-oauth-server-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/kafka/kafka-oauth-server-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/kafka/kafka-oauth-common-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/kafka/kafka-oauth-client-1.0.0-SNAPSHOT-javadoc.jar
+    command: 
+      - bash 
+      - -c 
+      - | 
+        rm /usr/share/java/cp-base-new/slf4j-log4j12-*.jar
+        echo "Launching Kafka Connect"
+        /etc/confluent/docker/run & 
+        sleep infinity
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: 20.199.83.36:9092
+      CONNECT_REST_ADVERTISED_HOST_NAME: connect
+      CONNECT_GROUP_ID: compose-connect-group
+      CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_FLUSH_INTERVAL_MS: 10000
+      CONNECT_OFFSET_STORAGE_TOPIC: docker-connect-offsets
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_TOPIC: docker-connect-status
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CUB_CLASSPATH: '/usr/share/java/confluent-security/connect/*:/usr/share/java/kafka/*:/usr/share/java/cp-base-new/*'
+      CONNECT_PLUGIN_PATH: "/usr/share/java, /usr/share/confluent-hub-components, /opt/stream-reactor-1.2.3-2.1.0/, /opt/stream-reactor-3.0.1-2.5.0,/usr/share/java/cp-base-new/"
+      CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
+      CONNECT_LOG4J_LOGGERS: org.apache.zookeeper=INFO,org.I0Itec.zkclient=INFO,org.reflections=INFO,log4j.rootLogger="DEBUG, A1" , log4j.appender.A1=org.apache.log4j.ConsoleAppender
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      CONNECT_SASL_JAAS_CONFIG: >
+              org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
+              oauth.client.id="kafka"
+              oauth.ssl.endpoint.identification.algorithm=""
+              oauth.client.secret="cpCkolaKEJg8VUCVrJ8iUEO2AvAqveOG"
+              oauth.ssl.truststore.location="/etc/ssl/certs/docker/new-truststore.jks"
+              oauth.ssl.truststore.password="dockerpw"
+              oauth.token.endpoint.uri="https://20.199.83.36:8443/realms/demo/protocol/openid-connect/token";
+      CONNECT_SECURITY_PROTOCOL: SASL_SSL
+      CONNECT_SASL_MECHANISM: OAUTHBEARER
+      CONNECT_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+      CONNECT_SASL_LOGIN_CALLBACK_HANDLER_CLASS: io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
+      CONNECT_SSL_KEYSTORE_LOCATION: /etc/ssl/certs/docker/new-broker1.jks
+      CONNECT_SSL_KEYSTORE_PASSWORD: dockerpw
+      CONNECT_SSL_KEY_PASSWORD: dockerpw
+      CONNECT_SSL_TRUSTSTORE_LOCATION: /etc/ssl/certs/docker/new-truststore.jks
+      CONNECT_SSL_TRUSTSTORE_PASSWORD: dockerpw
+      CONNECT_PRODUCER_MAX_REQUEST_SIZE: 15000000
+      CONNECT_CONSUMER_MAX_PARTITION_FETCH_BYTES: 15000000
+
+  ksqldb-server:
+    image: confluentinc/cp-ksqldb-server:7.5.1
+    hostname: ksqldb-server
+    container_name: ksqldb-server
+    volumes:
+      - /etc/ssl/certs/docker/:/etc/ssl/certs/docker/
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-common-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-common-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/accessors-smart-2.4.9.jar:/usr/share/java/cp-base-new/accessors-smart-2.4.9.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-server-plain-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-server-plain-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-server-plain-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-client-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/json-path-2.8.0.jar:/usr/share/java/cp-base-new/json-path-2.8.0.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-server-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-client-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/nimbus-jose-jwt-9.31.jar:/usr/share/java/cp-base-new/nimbus-jose-jwt-9.31.jar
+      - /home/meta/jar-for-kafka/json-smart-2.4.10.jar:/usr/share/java/cp-base-new/json-smart-2.4.10.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-server-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-server-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-common-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-client-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT.jar:/usr/share/java/ksqldb-server/kafka-oauth-common-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/ksqldb-server/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/ksqldb-server/kafka-oauth-common-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/accessors-smart-2.4.9.jar:/usr/share/java/ksqldb-server/accessors-smart-2.4.9.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT.jar:/usr/share/java/ksqldb-server/kafka-oauth-server-plain-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/ksqldb-server/kafka-oauth-server-plain-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/ksqldb-server/kafka-oauth-server-plain-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/ksqldb-server/kafka-oauth-client-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT.jar:/usr/share/java/ksqldb-server/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/json-path-2.8.0.jar:/usr/share/java/ksqldb-server/json-path-2.8.0.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT.jar:/usr/share/java/ksqldb-server/kafka-oauth-server-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT.jar:/usr/share/java/ksqldb-server/kafka-oauth-client-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/ksqldb-server/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/nimbus-jose-jwt-9.31.jar:/usr/share/java/ksqldb-server/nimbus-jose-jwt-9.31.jar
+      - /home/meta/jar-for-kafka/json-smart-2.4.10.jar:/usr/share/java/ksqldb-server/json-smart-2.4.10.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/ksqldb-server/kafka-oauth-server-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/ksqldb-server/kafka-oauth-server-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/ksqldb-server/kafka-oauth-common-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/ksqldb-server/kafka-oauth-client-1.0.0-SNAPSHOT-javadoc.jar
+    depends_on:
+      - broker
+      - connect
+    ports:
+      - "8088:8088"
+    environment:
+      KSQL_CONFIG_DIR: "/etc/ksql"
+      KSQL_BOOTSTRAP_SERVERS: 20.199.83.36:9092
+      KSQL_HOST_NAME: ksqldb-server
+      KSQL_LISTENERS: "http://0.0.0.0:8088"
+      KSQL_CACHE_MAX_BYTES_BUFFERING: 0
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      KSQL_KSQL_CONNECT_URL: "http://connect:8083"
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_REPLICATION_FACTOR: 1
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: 'true'
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: 'true'
+      KSQL_SASL_JAAS_CONFIG: >
+             org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
+             oauth.client.id="kafka"
+             oauth.client.secret="cpCkolaKEJg8VUCVrJ8iUEO2AvAqveOG"
+             oauth.ssl.endpoint.identification.algorithm=""
+             oauth.ssl.truststore.location="/etc/ssl/certs/docker/truststore.jks"
+             oauth.ssl.truststore.password="dockerpw"
+             oauth.token.endpoint.uri="https://20.199.83.36:8443/realms/demo/protocol/openid-connect/token";
+      KSQL_SECURITY_PROTOCOL: SASL_SSL
+      KSQL_SASL_MECHANISM: OAUTHBEARER
+      KSQL_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+      KSQL_SASL_LOGIN_CALLBACK_HANDLER_CLASS: io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
+      KSQL_SSL_KEYSTORE_LOCATION: /etc/ssl/certs/docker/broker1.jks
+      KSQL_SSL_KEYSTORE_PASSWORD: dockerpw
+      KSQL_SSL_KEY_PASSWORD: dockerpw
+      KSQL_SSL_TRUSTSTORE_LOCATION: /etc/ssl/certs/docker/truststore.jks
+      KSQL_SSL_TRUSTSTORE_PASSWORD: dockerpw
+
+
+  ksqldb-cli:
+    image: confluentinc/cp-ksqldb-cli:7.5.1
+    container_name: ksqldb-cli
+    depends_on:
+      - broker
+      - connect
+      - ksqldb-server
+    entrypoint: /bin/sh
+    tty: true
+
+  ksql-datagen:
+    image: confluentinc/ksqldb-examples:7.5.1
+    hostname: ksql-datagen
+    container_name: ksql-datagen
+    volumes:
+      - /etc/ssl/certs/docker/:/etc/ssl/certs/docker/
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-common-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-common-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/accessors-smart-2.4.9.jar:/usr/share/java/cp-base-new/accessors-smart-2.4.9.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-server-plain-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-server-plain-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-server-plain-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-client-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/json-path-2.8.0.jar:/usr/share/java/cp-base-new/json-path-2.8.0.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-server-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-client-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/nimbus-jose-jwt-9.31.jar:/usr/share/java/cp-base-new/nimbus-jose-jwt-9.31.jar
+      - /home/meta/jar-for-kafka/json-smart-2.4.10.jar:/usr/share/java/cp-base-new/json-smart-2.4.10.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-server-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-server-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-common-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-client-1.0.0-SNAPSHOT-javadoc.jar
+    depends_on:
+      - ksqldb-server
+      - broker
+      - schema-registry
+      - connect
+    command: "bash -c 'echo Waiting for Kafka to be ready... && cub kafka-ready -b 20.199.83.36:9092 1 40 && echo Waiting for Confluent Schema Registry to be ready... && cub sr-ready schema-registry 8081 40 &&  echo Waiting a few seconds for topic creation to finish... && sleep 11 && tail -f /dev/null'"
+    environment:
+      KSQL_CONFIG_DIR: "/etc/ksql"
+      KSQL_LOG4J_ROOTLOGGER: INFO
+      STREAMS_BOOTSTRAP_SERVERS: 20.199.83.36:9092
+      STREAMS_SCHEMA_REGISTRY_HOST: schema-registry
+      STREAMS_SCHEMA_REGISTRY_PORT: 8081
+      STREAMS_SASL_JAAS_CONFIG: >
+             org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
+             oauth.client.id="kafka"
+             oauth.client.secret="cpCkolaKEJg8VUCVrJ8iUEO2AvAqveOG"
+             oauth.ssl.endpoint.identification.algorithm=""
+             oauth.ssl.truststore.location="/etc/ssl/certs/docker/truststore.jks"
+             oauth.ssl.truststore.password="dockerpw"
+             oauth.token.endpoint.uri="https://20.199.83.36:8443/realms/demo/protocol/openid-connect/token";
+      STREAMS_SECURITY_PROTOCOL: SASL_SSL
+      STREAMS_SASL_MECHANISM: OAUTHBEARER
+      STREAMS_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+      STREAMS_SASL_LOGIN_CALLBACK_HANDLER_CLASS: io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
+
+  rest-proxy:
+    image: confluentinc/cp-kafka-rest:7.5.1
+    depends_on:
+      - broker
+      - schema-registry
+    ports:
+      - 8082:8082
+    hostname: rest-proxy
+    container_name: rest-proxy
+    volumes:
+      - /etc/ssl/certs/docker/:/etc/ssl/certs/docker/
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-common-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-common-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/accessors-smart-2.4.9.jar:/usr/share/java/cp-base-new/accessors-smart-2.4.9.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-server-plain-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-server-plain-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-server-plain-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-client-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/json-path-2.8.0.jar:/usr/share/java/cp-base-new/json-path-2.8.0.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-server-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-client-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/nimbus-jose-jwt-9.31.jar:/usr/share/java/cp-base-new/nimbus-jose-jwt-9.31.jar
+      - /home/meta/jar-for-kafka/json-smart-2.4.10.jar:/usr/share/java/cp-base-new/json-smart-2.4.10.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-server-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-server-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-common-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-client-1.0.0-SNAPSHOT-javadoc.jar
+    environment:
+      KAFKA_REST_HOST_NAME: rest-proxy
+      KAFKA_REST_BOOTSTRAP_SERVERS: 20.199.83.36:9092
+      KAFKA_REST_LISTENERS: "http://rest-proxy:8082"
+      KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      KAFKA_REST_CLIENT_SECURITY_PROTOCOL: SASL_SSL
+      KAFKA_REST_CLIENT_SASL_MECHANISM: OAUTHBEARER
+      KAFKA_REST_CLIENT_SSL_KEYSTORE_LOCATION: /etc/ssl/certs/docker/broker1.jks
+      KAFKA_REST_CLIENT_SSL_KEYSTORE_PASSWORD: dockerpw
+      KAFKA_REST_CLIENT_SSL_KEY_PASSWORD: dockerpw
+      KAFKA_REST_CLIENT_SSL_TRUSTSTORE_LOCATION: /etc/ssl/certs/docker/truststore.jks
+      KAFKA_REST_CLIENT_SSL_TRUSTSTORE_PASSWORD: dockerpw
+      KAFKA_REST_CLIENT_SASL_LOGIN_CALLBACK_HANDLER_CLASS: io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
+      KAFKA_REST_CLIENT_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+      KAFKA_REST_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+      KAFKA_REST_CLIENT_SASL_JAAS_CONFIG: >
+              org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
+              oauth.client.id="kafka"
+              oauth.client.secret="cpCkolaKEJg8VUCVrJ8iUEO2AvAqveOG"
+              oauth.ssl.endpoint.identification.algorithm=""
+              oauth.ssl.truststore.location="/etc/ssl/certs/docker/truststore.jks"
+              oauth.ssl.truststore.password="dockerpw"
+              oauth.token.endpoint.uri="https://20.199.83.36:8443/realms/demo/protocol/openid-connect/token";
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:0.3.3
+    container_name: kafka-ui
+    volumes:
+      - /etc/ssl/certs/docker/:/etc/ssl/certs/docker/
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-common-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-common-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/accessors-smart-2.4.9.jar:/usr/share/java/cp-base-new/accessors-smart-2.4.9.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-server-plain-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-server-plain-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-plain-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-server-plain-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-client-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/json-path-2.8.0.jar:/usr/share/java/cp-base-new/json-path-2.8.0.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-server-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT.jar:/usr/share/java/cp-base-new/kafka-oauth-client-1.0.0-SNAPSHOT.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-keycloak-authorizer-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/nimbus-jose-jwt-9.31.jar:/usr/share/java/cp-base-new/nimbus-jose-jwt-9.31.jar
+      - /home/meta/jar-for-kafka/json-smart-2.4.10.jar:/usr/share/java/cp-base-new/json-smart-2.4.10.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT-sources.jar:/usr/share/java/cp-base-new/kafka-oauth-server-1.0.0-SNAPSHOT-sources.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-server-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-server-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-common-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-common-1.0.0-SNAPSHOT-javadoc.jar
+      - /home/meta/jar-for-kafka/kafka-oauth-client-1.0.0-SNAPSHOT-javadoc.jar:/usr/share/java/cp-base-new/kafka-oauth-client-1.0.0-SNAPSHOT-javadoc.jar
+    ports:
+      - "8090:8443"
+    restart: always
+    command: " java --add-opens java.rmi/javax.rmi.ssl=ALL-UNNAMED -cp /kafka-ui-api.jar -Dloader.path=/usr/share/java/cp-base-new/ org.springframework.boot.loader.PropertiesLauncher"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 20.199.83.36:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: schema-registry:8081
+      KAFKA_CLUSTERS_0_KSQLDBSERVER: ksqldb-server:8088
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: Connect
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://connect:8083
+      AUTH_TYPE: "LOGIN_FORM"
+      SPRING_SECURITY_USER_NAME: admin
+      SPRING_SECURITY_USER_PASSWORD: admin
+      SERVER_PORT: 8443
+      SERVER_SSL_KEY-STORE: /etc/ssl/certs/docker/kafka-ui1.jks
+      SERVER_SSL_KEY-STORE-PASSWORD: dockerpw
+      SERVER_SSL_KEY-PASSWORD: dockerpw
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SASL_SSL
+      KAFKA_CLUSTERS_0_PROPERTIES_SASL_MECHANISM: OAUTHBEARER
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_LOCATION: /etc/ssl/certs/docker/broker1.jks
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_PASSWORD: dockerpw
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEY_PASSWORD: dockerpw
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_LOCATION: /etc/ssl/certs/docker/truststore.jks
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_PASSWORD: dockerpw
+      KAFKA_CLUSTERS_0_PROPERTIES_SASL_LOGIN_CALLBACK_HANDLER_CLASS: io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
+      KAFKA_CLUSTERS_0_PROPERTIES_SASL_JAAS_CONFIG: >
+             org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
+             oauth.username.claim="preferred_username"
+             unsecuredLoginStringClaim_sub="unused"
+             oauth.client.id="kafka"
+             oauth.client.secret="cpCkolaKEJg8VUCVrJ8iUEO2AvAqveOG"
+             oauth.ssl.endpoint.identification.algorithm=""
+             oauth.ssl.truststore.location="/etc/ssl/certs/docker/truststore.jks"
+             oauth.ssl.truststore.password="dockerpw"
+             oauth.token.endpoint.uri="https://20.199.83.36:8443/realms/demo/protocol/openid-connect/token";

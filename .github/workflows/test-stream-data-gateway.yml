@@ -1,0 +1,50 @@
+name: Deploy and test stream data Gateway
+on: [push]
+jobs:
+  Deploy-Gateway:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Get current repository
+      uses: actions/checkout@v2
+      with:
+        ref: 'main'
+      
+    - name: Check IP
+      run: curl https://api.ipify.org
+    
+    - name: Get current ip
+      run: |
+        name=`hostname`
+        local="vicomtech"
+        if [[ $name == *"$local"* ]] ; then ipe=`ip route | grep -v default | grep metric | grep enp | grep src | awk '{print $9}'` ; else  ipe=`ip route | grep -v default | grep metric | grep eth0 | grep src | awk '{print $9}' | tail -n +2` ; fi
+        echo $ipe
+
+
+    - name: Build Stream Data Gateway
+      working-directory: ./src/dev-version
+      run: |
+        docker-compose down
+        docker-compose up -d
+        sleep 180
+
+    - name: Send message through Stream Data Gateway
+      working-directory: ./tests
+      run: |
+        sudo apt-get update
+        sudo apt-get upgrade
+        pip3 install -r requirements.txt
+        pip3 install --upgrade cffi==1.15.0
+        python3 producer.py
+        sleep 30
+    
+    - name: Receive through Stream Data Gateway
+      working-directory: ./tests
+      run: |
+        python3 consumer.py > received &
+        sleep 30
+
+    - name: Stop Stream Data Gateway
+      working-directory: ./src/dev-version
+      run: docker-compose down
+
