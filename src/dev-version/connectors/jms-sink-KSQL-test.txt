@@ -1,0 +1,15 @@
+
+
+CREATE SINK CONNECTOR JMS-SINK WITH (
+'connector.class'= 'com.datamountaineer.streamreactor.connect.jms.sink.JMSSinkConnector',
+'connect.jms.initial.context.factory'= 'org.apache.activemq.jndi.ActiveMQInitialContextFactory',
+'tasks.max'= '1',
+'topics'= 'desttopic',
+'connect.jms.password'= '<password>',
+'connect.progress.enabled'= 'true',
+'connect.jms.username'= '<user>',
+'connect.jms.url'= '" + activemq_url + "',
+'connect.jms.kcql'= 'INSERT INTO " + dest_topic + " SELECT * FROM " + source_topic + " WITHTYPE TOPIC WITHFORMAT JSON',
+'connect.jms.connection.factory'= 'ConnectionFactory',
+'name'= 'JMS_SINK'
+);

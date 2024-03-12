@@ -1,0 +1,37 @@
+title Stream Data Gateway
+actor user
+participant Dataflow as dataflow
+participant Stream\nData\nGateway as kafka
+participant MEC\nData Bus as amqp
+participant Sensors\&Devices as sd
+
+
+user->dataflow: Set data query \n <area, type, intance type>
+dataflow->kafka: Createa topic <topic>
+kafka->amqp: Create connectors \n <area, type, instance type>
+dataflow->user: Specific and protected topic to use \n <topic>
+
+alt consume data
+    dataflow->kafka: Trigger data production \n <area, typeCreatea topic <topic>
+    kafka->amqp: Trigger data production \n <area, type>
+    amqp->sd: Trigger data production \n <area, type>
+    activate sd
+    loop data production/consumption
+        sd-->amqp: Data
+        amqp-->kafka: Data
+        kafka-->user: Data
+    end    
+    deactivate sd
+else produce event
+    user->kafka: Event
+    kafka->amqp: Event
+    amqp->sd: Event
+end
+
+
+
+
+
+
+
+

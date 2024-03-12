@@ -1,0 +1,27 @@
+dependencies:
+- name: cp-kafka
+  repository: file://./charts/cp-kafka
+  version: 0.1.0
+- name: cp-zookeeper
+  repository: file://./charts/cp-zookeeper
+  version: 0.1.0
+- name: cp-schema-registry
+  repository: file://./charts/cp-schema-registry
+  version: 0.1.0
+- name: cp-kafka-rest
+  repository: file://./charts/cp-kafka-rest
+  version: 0.1.0
+- name: cp-kafka-connect
+  repository: file://./charts/cp-kafka-connect
+  version: 0.1.0
+- name: cp-ksql-server
+  repository: file://./charts/cp-ksql-server
+  version: 0.1.0
+- name: cp-control-center
+  repository: file://./charts/cp-control-center
+  version: 0.1.0
+- name: common
+  repository: https://charts.bitnami.com/bitnami
+  version: 2.2.0
+digest: sha256:41787d4249254b0886ab210d008df7214c140ecfa914e12fd689b8a1dd3aff4e
+generated: "2022-11-18T14:28:00.391913606+01:00"

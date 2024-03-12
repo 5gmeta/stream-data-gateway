@@ -1,0 +1,40 @@
+"https://stackoverflow.com/questions/59070554/kafka-connect-issue-when-reading-from-a-rabbitmq-queue"
+
+Test:
+    "value.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "format.class": "io.confluent.connect.azure.storage.format.json.JsonFormat",
+    
+Working version:    
+{
+  "schemas.enable": "false",
+  "connector.class": "com.datamountaineer.streamreactor.connect.jms.source.JMSSourceConnector",
+  "errors.log.include.messages": "false",
+  "connect.jms.initial.context.factory": "org.apache.activemq.jndi.ActiveMQInitialContextFactory",
+  "tasks.max": "1",
+  "connect.jms.url": "tcp://activemq:61616",
+  "connect.jms.username": "user",
+  "connect.jms.polling.timeout": "1000",
+  "connect.jms.scale.type": "kcql",
+  "connect.jms.connection.factory": "ConnectionFactory",
+  "config.action.reload": "restart",
+  "errors.log.enable": "false",
+  "connect.jms.max.retries": "20",
+  "errors.retry.timeout": "0",
+  "connect.jms.evict.threshold.minutes": "10",
+  "connect.jms.destination.selector": "CDI",
+  "errors.retry.delay.max.ms": "60000",
+  "connect.jms.password": "password",
+  "connect.jms.converter.throw.on.error": "false",
+  "connect.progress.enabled": "false",
+  "connect.jms.kcql": "INSERT INTO 5gmeta-cits SELECT * FROM 5gmeta-cits WITHTYPE TOPIC",
+  "connect.jms.error.policy": "THROW",
+  "connect.jms.batch.size": "100",
+  "connect.jms.evict.interval.minutes": "10",
+  "name": "jms-source",
+  "errors.tolerance": "none",
+  "connect.jms.retry.interval": "60000"
+}
+
+
+additional to kcql 
+WITHCONVERTER=`com.datamountaineer.streamreactor.connect.converters.source.BytesConverter`
